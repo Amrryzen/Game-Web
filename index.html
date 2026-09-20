@@ -1,15 +1,26 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Game Web Pertama</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Player Movement - Pertemuan 2</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<h1>Game Web Pertama</h1>
-<canvas id="gameCanvas" width="500"
-height="500"></canvas>
-<script src="game.js"></script>
+  <h1>Player Movement Game</h1>
+
+  <div class="container">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <div class="info">
+      <p>📍 <strong>Gunakan WASD untuk menggerakkan pemain</strong></p>
+      <p>Posisi X: <span id="posX">100</span> | Posisi Y: <span id="posY">100</span></p>
+      <p>Warna: <span id="playerColor">white</span> | Ukuran: <span id="playerSize">40x40</span> | Speed: <span id="playerSpeed">5</span></p>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
 </body>
+
 </html>
