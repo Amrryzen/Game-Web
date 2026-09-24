@@ -1,4 +1,6 @@
 body {
+  position: relative;
+  overflow-x: hidden;
   margin: 0;
   min-height: 100vh;
   display: flex;
@@ -10,6 +12,16 @@ body {
   font-family: Arial, sans-serif;
 }
 
+body .background-image {
+  position: fixed;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.15;
+  filter: blur(8px);
+}
+
 h1 {
   margin-bottom: 20px;
   font-size: 2.5em;
@@ -17,13 +29,22 @@ h1 {
 }
 
 .container {
+  width: min(900px, 92vw);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
 }
 
+.canvas-wrap {
+  position: relative;
+  width: min(100%, 800px);
+}
+
 canvas {
+  display: block;
+  width: 100%;
+  height: auto;
   border: 3px solid white;
   background: #222;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
@@ -31,17 +52,50 @@ canvas {
   border-radius: 20px;
 }
 
-.info {
-  text-align: center;
-  font-size: 1.1em;
-  color: #ffffff;
+.danger-message {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(220, 38, 38, 0.92);
+  color: white;
+  font-weight: bold;
+  font-size: 1.4em;
+  padding: 10px 24px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.info p {
+.danger-message.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.dashboard {
+  width: min(100%, 800px);
+  text-align: center;
+  font-size: 1.1em;
+}
+
+.petunjuk {
+  margin-bottom: 10px;
+}
+
+.status-grup {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.kolom p {
   margin: 8px 0;
 }
 
-.info span {
+.kolom span {
   color: #ffff74;
   font-weight: bold;
 }
