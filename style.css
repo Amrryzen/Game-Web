@@ -74,6 +74,63 @@ canvas {
   transform: translateX(-50%) scale(1);
 }
 
+.game-over-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.game-over-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.game-over-overlay h2 {
+  margin: 0;
+  font-size: 2em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.game-over-overlay.win h2 {
+  color: #7CFC9A;
+}
+
+.game-over-overlay.lose h2 {
+  color: #ff6b6b;
+}
+
+.game-over-overlay p {
+  margin: 0;
+  font-size: 1.2em;
+  color: #ffff74;
+  font-weight: bold;
+}
+
+.game-over-overlay button {
+  margin-top: 10px;
+  padding: 10px 28px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #111;
+  background: #ffff74;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.game-over-overlay button:hover {
+  background: #fff6a8;
+}
+
 .dashboard {
   width: min(100%, 800px);
   text-align: center;

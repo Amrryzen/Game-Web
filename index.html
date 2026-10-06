@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Player Movement - Pertemuan 3</title>
+  <title>Game Player Movement - Pertemuan 4</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <img class="background-image" src="" alt="">
+  <img class="background-image" src="bg.jpg" alt="">
   <div class="container">
-    <h1>Player Movement Game</h1>
+    <h1>Catch the Coin</h1>
     <div class="canvas-wrap">
       <canvas id="gameCanvas" width="800" height="500"></canvas>
       <div id="dangerMessage" class="danger-message">Bahaya!</div>
+      <div id="gameOverOverlay" class="game-over-overlay">
+        <h2 id="gameOverTitle">Game Over</h2>
+        <p id="gameOverText">Waktu habis!</p>
+        <button id="restartButton">Main Lagi</button>
+      </div>
     </div>
     <div class="dashboard">
       <div class="petunjuk">
@@ -31,6 +36,9 @@
         <div class="kolom">
           <p>Speed : <span id="playerSpeed">5</span></p>
           <p>Skor : <span id="score">0</span></p>
+        </div>
+        <div class="kolom">
+          <p>Waktu : <span id="timeLeft">30</span>s</p>
         </div>
       </div>
     </div>
