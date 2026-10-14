@@ -3,26 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Player Movement - Pertemuan 4</title>
+  <title>Catch the Gasoline</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <img class="background-image" src="bg.jpg" alt="">
+  <img class="background-image" src="assets/bg.jpg" alt="">
   <div class="container">
-    <h1>Catch the Coin</h1>
+    <div class="header-row">
+      <h1>Catch the Gasoline</h1>
+    </div>
     <div class="canvas-wrap">
       <canvas id="gameCanvas" width="800" height="500"></canvas>
-      <div id="dangerMessage" class="danger-message">Bahaya!</div>
+
+      <div id="startScreen" class="start-screen show">
+        <h2>Catch the Gasoline</h2>
+        <p class="start-desc">Kendarai mobil, ambil <strong>gasoline</strong> buat skor, hindari <strong>paku</strong> di jalan!</p>
+        <p class="start-petunjuk">Gunakan <strong>WASD</strong> atau <strong>Arrow Key</strong> untuk bergerak.</p>
+        <button id="startButton">Mulai Main</button>
+      </div>
+
+      <div id="dangerMessage" class="danger-message">Kena Paku!</div>
+
       <div id="gameOverOverlay" class="game-over-overlay">
         <h2 id="gameOverTitle">Game Over</h2>
         <p id="gameOverText">Waktu habis!</p>
         <button id="restartButton">Main Lagi</button>
       </div>
+
+    </div>
+    <div class="hud">
+      <div class="hud-item hud-score">Score: <span id="score">0</span></div>
+      <div class="hud-item hud-timer">Timer: <span id="timeLeft">30</span>s</div>
+      <div class="hud-item hud-highscore">Highscore: <span id="highScore">0</span></div>
+      <button id="muteButton" class="mute-button">🔊 Mute</button>
     </div>
     <div class="dashboard">
       <div class="petunjuk">
-        Gunakan <strong>WASD</strong> atau <strong>Arrow Key</strong> untuk menggerakkan pemain
+        Gunakan <strong>WASD</strong> atau <strong>Arrow Key</strong> untuk mengendarai mobil. Ambil <strong>gasoline</strong>, hindari <strong>paku</strong>!
       </div>
       <div class="status-grup">
         <div class="kolom">
@@ -35,10 +53,6 @@
         </div>
         <div class="kolom">
           <p>Speed : <span id="playerSpeed">5</span></p>
-          <p>Skor : <span id="score">0</span></p>
-        </div>
-        <div class="kolom">
-          <p>Waktu : <span id="timeLeft">30</span>s</p>
         </div>
       </div>
     </div>

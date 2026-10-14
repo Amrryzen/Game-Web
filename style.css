@@ -23,8 +23,9 @@ body .background-image {
 }
 
 h1 {
-  margin-bottom: 20px;
-  font-size: 2.5em;
+  margin: 0;
+  font-size: 2.2em;
+  color: #ffb703;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
 }
 
@@ -33,7 +34,32 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+}
+
+.header-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.mute-button {
+  padding: 8px 16px;
+  font-size: 0.95em;
+  font-weight: bold;
+  color: #111;
+  background: #ffb703;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.mute-button:hover {
+  background: #ffd166;
 }
 
 .canvas-wrap {
@@ -45,11 +71,100 @@ canvas {
   display: block;
   width: 100%;
   height: auto;
-  border: 3px solid white;
+  border: 3px solid #ffb703;
   background: #222;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  background-image: url("assets/jalanan.png");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 20px rgba(255, 183, 3, 0.4);
   cursor: none;
   border-radius: 20px;
+}
+
+.hud {
+  width: min(100%, 800px);
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hud-item {
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #ffb703;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #ffd166;
+}
+
+.hud-timer {
+  border-color: #4cc9f0;
+  color: #4cc9f0;
+}
+
+.hud-highscore {
+  border-color: #7CFC9A;
+  color: #7CFC9A;
+}
+
+.start-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  background: rgba(10, 10, 15, 0.88);
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.start-screen.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.start-screen h2 {
+  margin: 0;
+  font-size: 2em;
+  color: #ffb703;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.start-desc {
+  margin: 0;
+  max-width: 480px;
+  font-size: 1.1em;
+}
+
+.start-petunjuk {
+  margin: 0;
+  color: #ccc;
+}
+
+.start-screen button {
+  margin-top: 12px;
+  padding: 12px 32px;
+  font-size: 1.15em;
+  font-weight: bold;
+  color: #111;
+  background: #ffb703;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.start-screen button:hover {
+  background: #ffd166;
 }
 
 .danger-message {
@@ -113,6 +228,8 @@ canvas {
   font-size: 1.2em;
   color: #ffff74;
   font-weight: bold;
+  text-align: center;
+  padding: 0 16px;
 }
 
 .game-over-overlay button {
@@ -155,4 +272,42 @@ canvas {
 .kolom span {
   color: #ffff74;
   font-weight: bold;
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.5em;
+  }
+
+  .hud-item {
+    font-size: 0.85em;
+    padding: 4px 8px;
+  }
+
+  .hud {
+    gap: 6px;
+  }
+
+  .mute-button {
+    padding: 6px 10px;
+    font-size: 0.85em;
+  }
+
+  .start-screen h2 {
+    font-size: 1.4em;
+  }
+
+  .start-desc,
+  .start-petunjuk {
+    font-size: 0.9em;
+  }
+
+  .status-grup {
+    gap: 12px;
+    font-size: 0.85em;
+  }
+
+  .dashboard {
+    font-size: 0.9em;
+  }
 }
