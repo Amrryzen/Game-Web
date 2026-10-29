@@ -8,9 +8,9 @@ const CONFIG = {
   skorPerGasoline: 10,
   gasolinePickupDuration: 650,
   respawnAnimationDuration: 500,
-  startingTime: 30,
-  winScore: 100,
+  startingTime: 0,
   obstacleSpawnInterval: 5000,
+  maxPaku: 14,
   kecepatanRotasi: 0.012,
   slowDuration: 2000,
   slowFactor: 0.4,
@@ -19,7 +19,43 @@ const CONFIG = {
   winFlashDuration: 8000,
   gameOverFlashInterval: 120,
   highScoreKey: "catchTheGasoline_highScore",
+  maxFuel: 100,
+  fuelDrainPerSecond: 5,
+  fuelDrainRamp: 0.04,
+  fuelDrainMax: 12,
+  fuelPerGasoline: 15,
+  fuelPenaltyPaku: 8,
+  comboWindow: 2000,
+  maxCombo: 3,
+  powerupSpawnInterval: 7000,
+  powerupLifetime: 6000,
+  powerupSize: 32,
+  nitroDuration: 3000,
+  nitroFactor: 2,
+  jerigenFuel: 35,
+  goldSpawnInterval: 12000,
+  goldLifetime: 3500,
+  goldSize: 30,
+  skorEmas: 30,
+  fuelPerEmas: 25,
+  magnetDuration: 5000,
+  magnetRadius: 160,
+  magnetPull: 3.5,
+  pakuWarningDuration: 1000,
+  minSpawnDistance: 120,
+  shakeDuration: 300,
+  shakeIntensity: 8,
+  lowFuelRatio: 0.25,
+  lowFuelMusicRate: 1.3,
 };
+
+const POWERUP_TYPES = {
+  nitro: { icon: "⚡", color: "#4cc9f0" },
+  jerigen: { icon: "⛽", color: "#7CFC9A" },
+  perisai: { icon: "🛡", color: "#c77dff" },
+  magnet: { icon: "🧲", color: "#ff6b6b" },
+};
+const daftarPowerup = Object.keys(POWERUP_TYPES);
 
 const ASET = {
   mobil: "assets/mobil.png",
@@ -124,7 +160,19 @@ const initialPakuCount = paku.length;
 const trails = [];
 const keys = {};
 const gasolineEffects = [];
+const powerups = [];
+const pakuWarnings = [];
 
+let emas = null;
+let emasSpawnElapsed = 0;
+let perisai = false;
+let magnetRemaining = 0;
+let shakeRemaining = 0;
+let fuel = CONFIG.maxFuel;
+let comboCount = 0;
+let comboRemaining = 0;
+let nitroRemaining = 0;
+let powerupSpawnElapsed = 0;
 let dangerTimeout = null;
 let lastState = { x: -1, y: -1 };
 let score = 0;
@@ -173,14 +221,8 @@ function startTimer() {
   timerInterval = setInterval(() => {
     if (gameState !== GAME_STATE.PLAYING) return;
 
-    timeLeft--;
+    timeLeft++;
     UI.timeLeft.textContent = timeLeft;
-
-    if (timeLeft <= 0) {
-      timeLeft = 0;
-      UI.timeLeft.textContent = timeLeft;
-      endGame(score >= CONFIG.winScore);
-    }
   }, 1000);
 }
 
@@ -189,9 +231,11 @@ function startObstacleSpawner() {
   obstacleSpawnTimer = setInterval(() => {
     if (gameState !== GAME_STATE.PLAYING) return;
 
-    const obstacle = { x: 0, y: 0, w: 26, h: 26, color: "#8d8d8d" };
-    respawnObject(obstacle);
-    paku.push(obstacle);
+    if (paku.length + pakuWarnings.length >= CONFIG.maxPaku) return;
+
+    const peringatan = { x: 0, y: 0, w: 26, h: 26, age: 0 };
+    respawnJauhDariMobil(peringatan);
+    pakuWarnings.push(peringatan);
   }, CONFIG.obstacleSpawnInterval);
 }
 
@@ -206,10 +250,11 @@ function startGame() {
 
 UI.startButton.addEventListener("click", startGame);
 
-function endGame(isWin) {
+function endGame(isWin, alasan = "Bensin habis!") {
   gameState = GAME_STATE.GAME_OVER;
   clearInterval(obstacleSpawnTimer);
   bgm.pause();
+  bgm.playbackRate = 1;
   activeGameOverFlashDuration = isWin
     ? CONFIG.winFlashDuration
     : CONFIG.gameOverFlashDuration;
@@ -223,7 +268,7 @@ function endGame(isWin) {
   UI.gameOverTitle.textContent = isWin ? "Menang!" : "Game Over";
   UI.gameOverText.textContent = isWin
     ? `Skor akhir: ${score} | High Score: ${highScore}`
-    : `Kehabisan waktu! Skor akhir: ${score} | High Score: ${highScore}`;
+    : `${alasan} Skor: ${score} | Bertahan: ${timeLeft}s | High Score: ${highScore}`;
 }
 
 function restartGame() {
@@ -233,6 +278,19 @@ function restartGame() {
   resetMobil();
   gasolineEffects.length = 0;
   paku.length = initialPakuCount;
+  powerups.length = 0;
+  pakuWarnings.length = 0;
+  emas = null;
+  emasSpawnElapsed = 0;
+  perisai = false;
+  magnetRemaining = 0;
+  shakeRemaining = 0;
+  canvas.style.transform = "";
+  fuel = CONFIG.maxFuel;
+  comboCount = 0;
+  comboRemaining = 0;
+  nitroRemaining = 0;
+  powerupSpawnElapsed = 0;
 
   UI.gameOverOverlay.classList.remove("show", "win", "lose");
   UI.score.textContent = score;
@@ -270,6 +328,13 @@ const respawnObject = (obj) => {
   obj.y = Math.random() * (canvas.height - obj.h);
 };
 
+const respawnJauhDariMobil = (obj) => {
+  for (let i = 0; i < 10; i++) {
+    respawnObject(obj);
+    if (Math.hypot(obj.x - mobil.x, obj.y - mobil.y) > CONFIG.minSpawnDistance) return;
+  }
+};
+
 const resetMobil = () => {
   mobil.x = startX;
   mobil.y = startY;
@@ -281,14 +346,17 @@ const resetMobil = () => {
   slowElapsed = CONFIG.slowDuration;
 };
 
-const showDangerMessage = () => {
-  UI.dangerMessage.textContent = "Kena Paku! Melambat...";
+const showMessage = (text, kind = "danger", duration = CONFIG.dangerMessageDuration) => {
+  UI.dangerMessage.textContent = text;
+  UI.dangerMessage.classList.toggle("info", kind === "info");
   UI.dangerMessage.classList.add("show");
   clearTimeout(dangerTimeout);
   dangerTimeout = setTimeout(() => {
     UI.dangerMessage.classList.remove("show");
-  }, CONFIG.slowDuration);
+  }, duration);
 };
+
+const showDangerMessage = () => showMessage("Kena Paku! Melambat...", "danger", CONFIG.slowDuration);
 
 function sudutTerpendek(dari, ke) {
   let selisih = (ke - dari) % (Math.PI * 2);
@@ -307,7 +375,8 @@ function handleMovement() {
 
   const sedangSlow = slowElapsed < CONFIG.slowDuration;
   const multiplierSlow = sedangSlow ? CONFIG.slowFactor : 1;
-  const speed = mobil.speed * multiplierSlow;
+  const multiplierNitro = nitroRemaining > 0 ? CONFIG.nitroFactor : 1;
+  const speed = mobil.speed * multiplierSlow * multiplierNitro;
 
   let dx = 0;
   let dy = 0;
@@ -344,19 +413,19 @@ function checkGasolineCollisions() {
 
   gasoline.forEach((item) => {
     if (checkCollision(mobil, item)) {
-      score += CONFIG.skorPerGasoline;
-      createGasolineEffect(item);
+      comboCount++;
+      comboRemaining = CONFIG.comboWindow;
+      const poin = CONFIG.skorPerGasoline * Math.min(comboCount, CONFIG.maxCombo);
+      score += poin;
+      fuel = Math.min(CONFIG.maxFuel, fuel + CONFIG.fuelPerGasoline);
+      createGasolineEffect(item, poin);
       respawnObject(item);
       putarAudio(sfxGasoline);
-
-      if (score >= CONFIG.winScore) {
-        endGame(true);
-      }
     }
   });
 }
 
-function createGasolineEffect(item) {
+function createGasolineEffect(item, poin) {
   const particleCount = 10;
   const centerX = item.x + item.w / 2;
   const centerY = item.y + item.h / 2;
@@ -365,6 +434,7 @@ function createGasolineEffect(item) {
     x: centerX,
     y: centerY,
     color: item.color,
+    poin,
     age: 0,
     particles: Array.from({ length: particleCount }, (_, index) => {
       const angle = (Math.PI * 2 * index) / particleCount;
@@ -383,10 +453,22 @@ function checkPakuCollisions() {
 
   paku.some((item) => {
     if (checkCollision(mobil, item)) {
+      respawnJauhDariMobil(item);
+      putarAudio(sfxPaku);
+
+      if (perisai) {
+        perisai = false;
+        shakeRemaining = CONFIG.shakeDuration / 2;
+        showMessage("Perisai pecah!", "info");
+        return true;
+      }
+
       showDangerMessage();
       slowElapsed = 0;
-      respawnObject(item);
-      putarAudio(sfxPaku);
+      comboCount = 0;
+      comboRemaining = 0;
+      fuel = Math.max(0, fuel - CONFIG.fuelPenaltyPaku);
+      shakeRemaining = CONFIG.shakeDuration;
       return true;
     }
     return false;
@@ -418,9 +500,162 @@ function update(deltaTime) {
     trails.shift();
   }
 
+  if (gameState === GAME_STATE.PLAYING) {
+    const drain = Math.min(
+      CONFIG.fuelDrainMax,
+      CONFIG.fuelDrainPerSecond + timeLeft * CONFIG.fuelDrainRamp,
+    );
+    fuel = Math.max(0, fuel - (drain * deltaTime) / 1000);
+    comboRemaining = Math.max(0, comboRemaining - deltaTime);
+    if (comboRemaining === 0) comboCount = 0;
+    nitroRemaining = Math.max(0, nitroRemaining - deltaTime);
+    magnetRemaining = Math.max(0, magnetRemaining - deltaTime);
+    updatePowerups(deltaTime);
+    updateEmas(deltaTime);
+    updatePakuWarnings(deltaTime);
+    applyMagnet(deltaTime);
+
+    const targetRate = fuel / CONFIG.maxFuel <= CONFIG.lowFuelRatio ? CONFIG.lowFuelMusicRate : 1;
+    if (bgm.playbackRate !== targetRate) bgm.playbackRate = targetRate;
+  }
+  shakeRemaining = Math.max(0, shakeRemaining - deltaTime);
+
   checkGasolineCollisions();
+  checkEmasCollision();
   checkPakuCollisions();
+  checkPowerupCollisions();
   updateGasolineEffects(deltaTime);
+
+  if (gameState === GAME_STATE.PLAYING && fuel <= 0) {
+    endGame(false, "Bensin habis!");
+  }
+}
+
+function updatePowerups(deltaTime) {
+  if (powerups.length === 0) {
+    powerupSpawnElapsed += deltaTime;
+    if (powerupSpawnElapsed >= CONFIG.powerupSpawnInterval) {
+      powerupSpawnElapsed = 0;
+      const item = {
+        tipe: daftarPowerup[Math.floor(Math.random() * daftarPowerup.length)],
+        x: 0,
+        y: 0,
+        w: CONFIG.powerupSize,
+        h: CONFIG.powerupSize,
+        age: 0,
+      };
+      respawnObject(item);
+      powerups.push(item);
+    }
+  }
+
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    powerups[i].age += deltaTime;
+    if (powerups[i].age >= CONFIG.powerupLifetime) powerups.splice(i, 1);
+  }
+}
+
+function checkPowerupCollisions() {
+  if (gameState !== GAME_STATE.PLAYING) return;
+
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    const item = powerups[i];
+    if (!checkCollision(mobil, item)) continue;
+
+    powerups.splice(i, 1);
+    putarAudio(sfxGasoline);
+
+    if (item.tipe === "nitro") {
+      nitroRemaining = CONFIG.nitroDuration;
+      showMessage("NITRO! Speed 2x", "info");
+    } else if (item.tipe === "perisai") {
+      perisai = true;
+      showMessage("Perisai aktif! Kebal 1 paku", "info");
+    } else if (item.tipe === "magnet") {
+      magnetRemaining = CONFIG.magnetDuration;
+      showMessage("Magnet aktif!", "info");
+    } else {
+      fuel = Math.min(CONFIG.maxFuel, fuel + CONFIG.jerigenFuel);
+      showMessage(`Bensin +${CONFIG.jerigenFuel}%!`, "info");
+    }
+  }
+}
+
+function updateEmas(deltaTime) {
+  if (emas) {
+    emas.age += deltaTime;
+    if (emas.age >= CONFIG.goldLifetime) emas = null;
+    return;
+  }
+
+  emasSpawnElapsed += deltaTime;
+  if (emasSpawnElapsed < CONFIG.goldSpawnInterval) return;
+  emasSpawnElapsed = 0;
+
+  emas = { x: 0, y: 0, w: CONFIG.goldSize, h: CONFIG.goldSize, age: 0, color: "#ffd700" };
+  if (paku.length > 0) {
+    const target = paku[Math.floor(Math.random() * paku.length)];
+    const sudut = Math.random() * Math.PI * 2;
+    const jarak = 50 + Math.random() * 40;
+    emas.x = Math.max(0, Math.min(canvas.width - emas.w, target.x + Math.cos(sudut) * jarak));
+    emas.y = Math.max(0, Math.min(canvas.height - emas.h, target.y + Math.sin(sudut) * jarak));
+  } else {
+    respawnObject(emas);
+  }
+}
+
+function checkEmasCollision() {
+  if (gameState !== GAME_STATE.PLAYING || !emas || !checkCollision(mobil, emas)) return;
+
+  comboCount++;
+  comboRemaining = CONFIG.comboWindow;
+  const poin = CONFIG.skorEmas * Math.min(comboCount, CONFIG.maxCombo);
+  score += poin;
+  fuel = Math.min(CONFIG.maxFuel, fuel + CONFIG.fuelPerEmas);
+  createGasolineEffect(emas, poin);
+  emas = null;
+  putarAudio(sfxGasoline);
+}
+
+function updatePakuWarnings(deltaTime) {
+  for (let i = pakuWarnings.length - 1; i >= 0; i--) {
+    const peringatan = pakuWarnings[i];
+    peringatan.age += deltaTime;
+    if (peringatan.age >= CONFIG.pakuWarningDuration) {
+      paku.push({ x: peringatan.x, y: peringatan.y, w: peringatan.w, h: peringatan.h, color: "#8d8d8d" });
+      pakuWarnings.splice(i, 1);
+    }
+  }
+}
+
+function applyMagnet(deltaTime) {
+  if (magnetRemaining <= 0) return;
+
+  const cx = mobil.x + mobil.w / 2;
+  const cy = mobil.y + mobil.h / 2;
+  const targets = emas ? [...gasoline, emas] : gasoline;
+
+  targets.forEach((item) => {
+    const dx = cx - (item.x + item.w / 2);
+    const dy = cy - (item.y + item.h / 2);
+    const jarak = Math.hypot(dx, dy);
+    if (jarak === 0 || jarak > CONFIG.magnetRadius) return;
+
+    const langkah = Math.min(jarak, (CONFIG.magnetPull * deltaTime) / 16);
+    item.x += (dx / jarak) * langkah;
+    item.y += (dy / jarak) * langkah;
+  });
+}
+
+function applyShake() {
+  if (shakeRemaining > 0) {
+    const kekuatan = CONFIG.shakeIntensity * (shakeRemaining / CONFIG.shakeDuration);
+    const offsetX = (Math.random() - 0.5) * 2 * kekuatan;
+    const offsetY = (Math.random() - 0.5) * 2 * kekuatan;
+    canvas.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  } else if (canvas.style.transform) {
+    canvas.style.transform = "";
+  }
 }
 
 function updateGasolineEffects(deltaTime) {
@@ -445,6 +680,141 @@ function updateDOM() {
   if (lastState.x !== currentX) { UI.posX.textContent = currentX; lastState.x = currentX; }
   if (lastState.y !== currentY) { UI.posY.textContent = currentY; lastState.y = currentY; }
   UI.score.textContent = score;
+  UI.speed.textContent = nitroRemaining > 0 ? mobil.speed * CONFIG.nitroFactor : mobil.speed;
+}
+
+function drawEmas() {
+  if (!emas) return;
+
+  const sisa = CONFIG.goldLifetime - emas.age;
+  if (sisa < 1200 && Math.floor(sisa / 100) % 2 === 0) return;
+
+  const cx = emas.x + emas.w / 2;
+  const cy = emas.y + emas.h / 2;
+  const pulse = 1 + 0.15 * Math.sin(emas.age / 100);
+
+  ctx.save();
+  ctx.shadowColor = "#ffd700";
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = emas.color;
+  ctx.strokeStyle = "#fff6a8";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, (emas.w / 2) * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.font = "bold 18px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#7a5200";
+  ctx.fillText("★", cx, cy + 1);
+  ctx.restore();
+}
+
+function drawPakuWarnings() {
+  pakuWarnings.forEach((peringatan) => {
+    const progress = peringatan.age / CONFIG.pakuWarningDuration;
+    const cx = peringatan.x + peringatan.w / 2;
+    const cy = peringatan.y + peringatan.h / 2;
+    const terang = Math.floor(peringatan.age / 100) % 2 === 0;
+
+    ctx.save();
+    ctx.strokeStyle = `rgba(255, 60, 60, ${terang ? 0.95 : 0.5})`;
+    ctx.fillStyle = `rgba(255, 60, 60, ${0.15 + progress * 0.25})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30 - progress * 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = "bold 18px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#fff";
+    ctx.fillText("!", cx, cy + 1);
+    ctx.restore();
+  });
+}
+
+function drawPowerups() {
+  powerups.forEach((item) => {
+    const info = POWERUP_TYPES[item.tipe];
+    const sisa = CONFIG.powerupLifetime - item.age;
+    if (sisa < 2000 && Math.floor(sisa / 150) % 2 === 0) return;
+
+    const cx = item.x + item.w / 2;
+    const cy = item.y + item.h / 2;
+    const pulse = 1 + 0.1 * Math.sin(item.age / 150);
+
+    ctx.save();
+    ctx.fillStyle = info.color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, (item.w / 2) * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#fff";
+    ctx.stroke();
+    ctx.font = "18px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#111";
+    ctx.fillText(info.icon, cx, cy + 1);
+    ctx.restore();
+  });
+}
+
+function drawHUD() {
+  const barX = 14;
+  const barY = 14;
+  const barW = 160;
+  const barH = 14;
+  const ratio = fuel / CONFIG.maxFuel;
+  const warna = ratio > 0.5 ? "#7CFC9A" : ratio > 0.25 ? "#ffd166" : "#ff4d4d";
+  const berkedip = ratio <= 0.25 && Math.floor(performance.now() / 200) % 2 === 0;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(barX - 4, barY - 4, barW + 8, barH + 8);
+  if (!berkedip) {
+    ctx.fillStyle = warna;
+    ctx.fillRect(barX, barY, barW * ratio, barH);
+  }
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#fff";
+  ctx.strokeRect(barX, barY, barW, barH);
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 14px Arial";
+  ctx.fillText(`⛽ ${Math.ceil(fuel)}%`, barX + barW + 12, barY + barH / 2);
+
+  if (comboCount >= 2) {
+    const mult = Math.min(comboCount, CONFIG.maxCombo);
+    ctx.fillStyle = "#ffb703";
+    ctx.font = "bold 22px Arial";
+    ctx.fillText(`COMBO x${mult}`, barX, barY + 38);
+    ctx.fillStyle = "rgba(255, 183, 3, 0.8)";
+    ctx.fillRect(barX, barY + 54, 100 * (comboRemaining / CONFIG.comboWindow), 4);
+  }
+
+  const status = [];
+  if (nitroRemaining > 0) {
+    status.push({ teks: `⚡ NITRO ${(nitroRemaining / 1000).toFixed(1)}s`, warna: "#4cc9f0" });
+  }
+  if (magnetRemaining > 0) {
+    status.push({ teks: `🧲 MAGNET ${(magnetRemaining / 1000).toFixed(1)}s`, warna: "#ff6b6b" });
+  }
+  if (perisai) {
+    status.push({ teks: "🛡 PERISAI", warna: "#c77dff" });
+  }
+  ctx.textAlign = "right";
+  ctx.font = "bold 18px Arial";
+  status.forEach((item, i) => {
+    ctx.fillStyle = item.warna;
+    ctx.fillText(item.teks, canvas.width - 14, barY + barH / 2 + i * 24);
+  });
+  ctx.restore();
 }
 
 function gambarAtauBentuk(gambar, x, y, w, h, gambarBentukFallback) {
@@ -463,7 +833,9 @@ function draw() {
     const ratio = (i + 1) / tLen;
     const radius = (mobil.w / 3) * ratio;
 
-    ctx.fillStyle = `rgba(120, 120, 120, ${ratio * 0.35})`;
+    ctx.fillStyle = nitroRemaining > 0
+      ? `rgba(76, 201, 240, ${ratio * 0.6})`
+      : `rgba(120, 120, 120, ${ratio * 0.35})`;
     ctx.beginPath();
     ctx.arc(trails[i].x, trails[i].y, radius, 0, Math.PI * 2);
     ctx.fill();
@@ -492,7 +864,7 @@ function draw() {
     ctx.fillStyle = `rgba(255, 183, 3, ${alpha * 0.6})`;
     ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(`+${CONFIG.skorPerGasoline}`, effect.x, effect.y - radius - 4);
+    ctx.fillText(`+${effect.poin}`, effect.x, effect.y - radius - 4);
 
     effect.particles.forEach((particle) => {
       ctx.fillStyle = `rgba(255, 183, 3, ${alpha})`;
@@ -513,6 +885,10 @@ function draw() {
       ctx.fill();
     });
   });
+
+  drawPakuWarnings();
+  drawEmas();
+  drawPowerups();
 
   const respawnProgress = mobilRespawnElapsed / CONFIG.respawnAnimationDuration;
   const mobilScale = 1 - 0.7 * Math.sin(respawnProgress * Math.PI);
@@ -541,6 +917,31 @@ function draw() {
   );
   ctx.restore();
 
+  if (magnetRemaining > 0) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 107, 107, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, CONFIG.magnetRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (perisai) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(199, 125, 255, 0.9)";
+    ctx.fillStyle = "rgba(199, 125, 255, 0.18)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 48, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawHUD();
+
   if (
     gameState === GAME_STATE.GAME_OVER &&
     gameOverFlashElapsed < activeGameOverFlashDuration &&
@@ -550,6 +951,7 @@ function draw() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
+  applyShake();
   updateDOM();
 }
 

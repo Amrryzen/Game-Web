@@ -184,6 +184,11 @@ canvas {
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
+.danger-message.info {
+  background: rgba(14, 116, 144, 0.92);
+  box-shadow: 0 0 20px rgba(76, 201, 240, 0.8);
+}
+
 .danger-message.show {
   opacity: 1;
   transform: translateX(-50%) scale(1);
