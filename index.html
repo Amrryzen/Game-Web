@@ -3,62 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catch the Gasoline</title>
+  <meta name="theme-color" content="#151714">
+  <title>Tol Malam — Balapan</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <img class="background-image" src="assets/bg.jpg" alt="">
-  <div class="container">
-    <div class="header-row">
-      <h1>Catch the Gasoline</h1>
-    </div>
-    <div class="canvas-wrap">
-      <canvas id="gameCanvas" width="800" height="500"></canvas>
-
-      <div id="startScreen" class="start-screen show">
-        <h2>Catch the Gasoline</h2>
-        <p class="start-desc">Kendarai mobil, ambil <strong>gasoline</strong> buat skor, hindari <strong>paku</strong> di jalan!</p>
-        <p class="start-petunjuk">Gunakan <strong>WASD</strong> atau <strong>Arrow Key</strong> untuk bergerak.</p>
-        <p class="start-petunjuk">Mode endless: bertahan selama mungkin dan kejar skor tertinggi. Bensin makin cepat habis seiring waktu. Ambil gasoline beruntun buat <strong>combo</strong>, tangkap <strong>⚡ Nitro</strong>, <strong>⛽ Jerigen</strong>, <strong>🛡 Perisai</strong>, <strong>🧲 Magnet</strong>, dan <strong>★ gasoline emas</strong> yang cuma muncul sebentar. Lingkaran merah <strong>!</strong> artinya paku sebentar lagi muncul.</p>
-        <button id="startButton">Mulai Main</button>
+  <main class="game-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Tol Malam">
+        <span class="brand-mark"></span>
+        <span>TOL MALAM</span>
+      </a>
+      <div class="topbar-actions">
+        <span class="route-label">CIPULARANG · KM 118</span>
+        <button id="muteButton" class="sound-button" type="button" aria-label="Matikan suara">🔊</button>
       </div>
+    </header>
 
-      <div id="dangerMessage" class="danger-message">Kena Paku!</div>
-
-      <div id="gameOverOverlay" class="game-over-overlay">
-        <h2 id="gameOverTitle">Game Over</h2>
-        <p id="gameOverText">Waktu habis!</p>
-        <button id="restartButton">Main Lagi</button>
-      </div>
-
-    </div>
-    <div class="hud">
-      <div class="hud-item hud-score">Score: <span id="score">0</span></div>
-      <div class="hud-item hud-timer">Waktu: <span id="timeLeft">0</span>s</div>
-      <div class="hud-item hud-highscore">Highscore: <span id="highScore">0</span></div>
-      <button id="muteButton" class="mute-button">🔊 Mute</button>
-    </div>
-    <div class="dashboard">
-      <div class="petunjuk">
-        Gunakan <strong>WASD</strong> atau <strong>Arrow Key</strong> untuk mengendarai mobil. Ambil <strong>gasoline</strong>, hindari <strong>paku</strong>!
-      </div>
-      <div class="status-grup">
-        <div class="kolom">
-          <p>Posisi X : <span id="posX">100</span></p>
-          <p>Posisi Y : <span id="posY">100</span></p>
+    <section class="race-layout" aria-label="Game balapan Tol Malam">
+      <div class="game-column">
+        <div class="race-heading">
+          <div>
+            <p class="eyebrow">BALAPAN MALAM</p>
+            <h1>Tol Malam</h1>
+          </div>
+          <div class="race-length">SPRINT <span>·</span> 1.800 M</div>
         </div>
-        <div class="kolom">
-          <p>Warna : <span id="playerColor">white</span></p>
-          <p>Ukuran : <span id="playerSize">40x40</span></p>
+
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="800" height="520" aria-label="Lintasan Tol Malam"></canvas>
+
+          <div id="startScreen" class="overlay start-screen show">
+            <div class="overlay-card">
+              <p class="overlay-label">CIPULARANG · KM 118</p>
+              <h2>Siap balapan?</h2>
+              <p>Salip rival dan hindari rintangan sampai garis finish.</p>
+              <button id="startButton" class="primary-button" type="button">MULAI BALAP</button>
+              <div class="key-hint">W / ↑ GAS <span>·</span> A D / ← → PINDAH JALUR <span>·</span> SHIFT NITRO</div>
+            </div>
+          </div>
+
+          <div id="gameOverOverlay" class="overlay result-screen">
+            <div class="overlay-card">
+              <p id="resultEyebrow" class="overlay-label">BALAPAN SELESAI</p>
+              <h2 id="gameOverTitle">SELESAI</h2>
+              <p id="gameOverText">Kamu sampai di garis finish.</p>
+              <div class="result-actions">
+                <button id="garageButton" class="primary-button" type="button">UPGRADE DI GARASI</button>
+                <button id="restartButton" class="secondary-button" type="button">BALAP LAGI</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="raceNotice" class="race-notice" aria-live="polite"></div>
+          <div id="countdown" class="countdown" aria-hidden="true"></div>
+          <div class="canvas-location">KM 118 · CIPULARANG</div>
         </div>
-        <div class="kolom">
-          <p>Speed : <span id="playerSpeed">5</span></p>
+
+        <div class="race-controls" aria-label="Kontrol balapan">
+          <button class="touch-control steering-control" data-control="left" type="button" aria-label="Pindah ke kiri">←</button>
+          <div class="touch-control-pedals">
+            <button class="touch-control brake-control" data-control="brake" type="button">REM</button>
+            <button class="touch-control gas-control" data-control="gas" type="button">GAS</button>
+            <button class="touch-control nitro-control" data-control="nitro" type="button">N₂O</button>
+          </div>
+          <button class="touch-control steering-control" data-control="right" type="button" aria-label="Pindah ke kanan">→</button>
         </div>
       </div>
-    </div>
-  </div>
 
+      <aside class="race-sidebar">
+        <div class="race-panel">
+          <div class="stat-card speed-card">
+            <div class="stat-heading"><p class="panel-label">KECEPATAN</p><span>KM/J</span></div>
+            <div class="speed-value"><span id="playerSpeed">0</span></div>
+            <div class="speed-track"><span id="speedFill"></span></div>
+          </div>
+
+          <div class="stat-card position-card">
+            <p class="panel-label">POSISI</p>
+            <div class="position-value"><span id="racePosition">1</span><small>/ 4</small></div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-heading"><p class="panel-label">JARAK</p><span id="distanceLabel">0 / 1.800 M</span></div>
+            <div class="progress-track"><span id="distanceFill"></span></div>
+          </div>
+
+          <div class="stat-card boost-card">
+            <div class="stat-heading"><p class="panel-label">NITRO</p><span id="nitroLabel">100%</span></div>
+            <div class="nitro-track"><span id="nitroFill"></span></div>
+          </div>
+          <div class="stat-card record-card">
+            <div class="stat-heading"><p class="panel-label">HIGH SCORE</p><span>REKOR JARAK</span></div>
+            <div id="highScoreValue" class="record-value">0 M</div>
+          </div>
+        </div>
+        <div class="race-summary">
+          <span>Rival dilewati <strong id="overtakeCount">0</strong></span>
+          <span>Kerusakan <strong id="damageCount">0 / 3</strong></span>
+        </div>
+        <section id="garage" class="garage" aria-label="Upgrade mobil">
+          <div class="garage-heading">
+            <div>
+              <p class="panel-label">GARASI</p>
+              <h2>Upgrade mobil</h2>
+            </div>
+            <div class="wallet"><span>Saldo</span><strong id="walletBalance">5.000</strong></div>
+          </div>
+          <div class="upgrade-list">
+            <article class="upgrade-row">
+              <div class="upgrade-info">
+                <h3>Kecepatan</h3>
+                <p id="speedUpgradeDescription">Level 0/5 · +15 km/j per level</p>
+              </div>
+              <button id="speedUpgradeButton" class="upgrade-button" type="button">
+                <span>Upgrade</span><strong>500</strong>
+              </button>
+            </article>
+            <article class="upgrade-row">
+              <div class="upgrade-info">
+                <h3>Nitro</h3>
+                <p id="nitroUpgradeDescription">Level 0/5 · +20 kapasitas per level</p>
+              </div>
+              <button id="nitroUpgradeButton" class="upgrade-button" type="button">
+                <span>Upgrade</span><strong>500</strong>
+              </button>
+            </article>
+          </div>
+          <p id="garageMessage" class="garage-message" aria-live="polite">Upgrade bisa dibeli sebelum balapan.</p>
+        </section>
+      </aside>
+    </section>
+
+    <footer class="footer-note">W / ↑ Gas <span>·</span> A D / ← → Pindah jalur <span>·</span> Shift Nitro</footer>
+  </main>
   <script src="game.js"></script>
 </body>
 </html>
