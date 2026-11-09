@@ -58,17 +58,17 @@ const POWERUP_TYPES = {
 const daftarPowerup = Object.keys(POWERUP_TYPES);
 
 const ASET = {
-  mobil: "assets/mobil.png",
-  gasoline: "assets/gasoline.png",
-  paku: "assets/paku.png",
+  mobil: "assets/Gambar/mobil.png",
+  gasoline: "assets/Gambar/gasoline.png",
+  paku: "assets/Gambar/paku.png",
 };
 
 const AUDIO = {
-  sfxGasoline: "assets/sfx-gasoline.mp3",
-  sfxPaku: "assets/sfx-paku.mp3",
-  sfxMenang: "assets/sfx-menang.mp3",
-  sfxKalah: "assets/sfx-kalah.mp3",
-  bgm: "assets/bgm.mp3",
+  sfxGasoline: "assets/Audio/sfx-gasoline.mp3",
+  sfxPaku: "assets/Audio/sfx-paku.mp3",
+  sfxMenang: "assets/Audio/sfx-menang.mp3",
+  sfxKalah: "assets/Audio/sfx-kalah.mp3",
+  bgm: "assets/Audio/bgm.mp3",
 };
 
 function muatGambar(src) {
@@ -137,7 +137,7 @@ const mobil = {
   y: 100,
   w: 40,
   h: 70,
-  speed: 2,
+  speed: 3,
   color: "white",
   sudut: 0,
 };
